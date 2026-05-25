@@ -24,13 +24,11 @@ def main():
     response = requests.get(url, headers=headers)
     data = response.json()
     
-    # DEBUG: Printa alla nycklar i det övergripande API-svaret
-    print(f"DEBUG: Toppnivå-nycklar i API-svaret: {list(data.keys())}")
+    # DEBUG: Inspektera strukturen i 'stats'
+    # Vi skriver ut de första 500 tecknen för att se strukturen
+    print(f"DEBUG: Innehåll i 'stats' (första 500 tecken): {str(data.get('stats'))[:500]}")
     
-    # Om du ser en nyckel som heter 'stats' eller liknande i listan ovan,
-    # så är det där xG-statistiken sannolikt finns.
-    
-    # (Resten av koden lämnas oförändrad för att inte bryta din tabell)
+    # Fortsätt som vanligt för att inte förstöra din nuvarande tabell
     table_data = data['table'][0]['data']['table']['all']
     rows = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
     

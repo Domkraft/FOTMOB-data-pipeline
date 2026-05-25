@@ -1,1 +1,22 @@
+name: Daily Allsvenskan Update
 
+on:
+  schedule:
+    - cron: '15 19 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-sheet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install gspread requests google-auth
+      - name: Run script
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: python main.py

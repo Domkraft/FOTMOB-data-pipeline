@@ -1,29 +1,47 @@
 import os
 import json
 import gspread
-from fotmob_api import Fotmob
+import requests
 from google.oauth2.service_account import Credentials
 
 def main():
-    # Autentisering till Google (samma som förut)
-    creds_dict = json.loads(os.environ['GCP_CREDENTIALS'])
+    # 1. Autentisering
+    creds_raw = os.environ.get('GCP_CREDENTIALS')
+    if not creds_raw:
+        raise ValueError("GCP_CREDENTIALS secret not found!")
+    
+    creds_dict = json.loads(creds_raw)
     scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
-    # Använd fotmob-api biblioteket
-    fm = Fotmob()
+    # 2. Hämta data från Fotmob med korrekta headers
+    # Vi använder en URL som är mer standardiserad för deras interna API-anrop
+    url = "https://www.fotmob.com/api/leagues?id=67"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Referer': 'https://www.fotmob.com/leagues/67/overview/allsvenskan',
+        'Accept': 'application/json',
+    }
     
-    # Hämta ligatabell för Allsvenskan (ID 67)
-    # Biblioteket sköter headers och anropsstruktur åt dig
-    league_data = fm.get_league(league_id="67")
+    response = requests.get(url, headers=headers)
     
-    # Tabellen brukar ligga under 'table' i svaret
-    table_data = league_data['table'][0]['data']['table']['all']
+    if response.status_code != 200:
+        print(f"Fel: Kunde inte hämta data (Status {response.status_code})")
+        return
     
-    # Förbered rader
+    data = response.json()
+    
+    # 3. Extrahera tabell-data
+    # Vi behöver verifiera strukturen
+    try:
+        table_data = data['table'][0]['data']['table']['all']
+    except (KeyError, IndexError) as e:
+        print(f"Kunde inte hitta tabell i svaret. Fel: {e}")
+        return
+    
+    # 4. Förbered rader
     rows = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
-    
     for team in table_data:
         rows.append([
             team.get('idx', ''),
@@ -38,11 +56,11 @@ def main():
             team.get('pts', 0)
         ])
     
-    # Uppdatera Google Sheet
+    # 5. Uppdatera Google Sheet
     sheet = client.open("FOTMOB data").worksheet("tabell")
     sheet.clear()
     sheet.update(range_name='A1', values=rows)
-    print("Tabellen har uppdaterats via biblioteket!")
+    print("Tabellen har uppdaterats!")
 
 if __name__ == "__main__":
     main()

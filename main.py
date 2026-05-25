@@ -23,14 +23,11 @@ def main():
     response = requests.get(url, headers=headers)
     data = response.json()
     
-    # DEBUG: Skriv ut strukturen för att hitta tabellen
-    print(f"DEBUG: Data keys: {list(data.keys())}")
-    
-    # Om 'table' inte är en lista med index, kanske det är en direkt nyckel?
-    # Vi behöver se vad 'data' innehåller.
-    
-    # (Vi avbryter här för att du ska kunna se debug-loggen)
-    print("DEBUG: Skriptet pausat för att inspektera loggen.")
+    # DEBUG: Eftersom data är en lista, skriv ut vad det första elementet är
+    if isinstance(data, list) and len(data) > 0:
+        print(f"DEBUG: Första elementet i listan: {json.dumps(data[0], indent=2)[:1000]}")
+    else:
+        print(f"DEBUG: Data är inte en lista eller är tom: {type(data)}")
 
 if __name__ == "__main__":
     main()

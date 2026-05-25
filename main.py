@@ -23,8 +23,8 @@ def main():
     data_table = response_table.json()
     
     table_data = data_table[0]['data']['table']['all']
-    # xG och xGA borttagna från rubrikerna
-    rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
+    # PPM tillagt som kolumn
+    rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng", "PPM"]]
     
     for team in table_data:
         goals_str = team.get('scoresStr', '0-0')
@@ -32,17 +32,23 @@ def main():
         gjorda = goals_list[0] if len(goals_list) > 0 else 0
         inslappta = goals_list[1] if len(goals_list) > 1 else 0
         
+        played = team.get('played', 0)
+        pts = team.get('pts', 0)
+        # Beräkna PPM: Poäng delat med spelade matcher
+        ppm = round(pts / played, 2) if played > 0 else 0
+        
         rows_table.append([
             team.get('idx', ''),
             team.get('name', ''),
-            team.get('played', 0),
+            played,
             team.get('wins', 0),
             team.get('draws', 0),
             team.get('losses', 0),
             gjorda,
             inslappta,
             team.get('goalConDiff', 0),
-            team.get('pts', 0)
+            pts,
+            ppm
         ])
     
     spreadsheet = client.open("FOTMOB data")
@@ -77,7 +83,7 @@ def main():
     sheet_matches.clear()
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Både 'tabell' och 'matcher' har uppdaterats (utan xG-data)!")
+    print("Både 'tabell' och 'matcher' har uppdaterats med PPM!")
 
 if __name__ == "__main__":
     main()

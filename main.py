@@ -15,31 +15,25 @@ def main():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
-    # 2. Hämta data
-    url = "https://www.fotmob.com/api/data/leagues?id=67&ccode3=SWE"
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Referer': 'https://www.fotmob.com/',
-        'Accept': 'application/json',
-    }
+    # 2. Hämta och uppdatera tabellen
+    url_table = "https://www.fotmob.com/api/data/tltable?leagueId=67"
+    headers = {'User-Agent': 'Mozilla/5.0'}
     
-    response = requests.get(url, headers=headers)
-    data = response.json()
+    response_table = requests.get(url_table, headers=headers)
+    data_table = response_table.json()
     
-    # 3. Extrahera tabell-data
-    table_data = data['table'][0]['data']['table']['all']
+    # Navigera i tabellstrukturen
+    table_data = data_table[0]['data']['table']['all']
     
-    # 4. Förbered rader
-    rows = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
+    rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng", "xG", "xGA"]]
     
     for team in table_data:
-        # Splitta '24-10' till [24, 10]
         goals_str = team.get('scoresStr', '0-0')
         goals_list = goals_str.split('-')
         gjorda = goals_list[0] if len(goals_list) > 0 else 0
         inslappta = goals_list[1] if len(goals_list) > 1 else 0
         
-        rows.append([
+        rows_table.append([
             team.get('idx', ''),
             team.get('name', ''),
             team.get('played', 0),
@@ -48,15 +42,44 @@ def main():
             team.get('losses', 0),
             gjorda,
             inslappta,
-            team.get('goalConDiff', 0), # Nyckeln för målskillnad i loggen
-            team.get('pts', 0)
+            team.get('goalConDiff', 0),
+            team.get('pts', 0),
+            team.get('expectedGoals', 0),
+            team.get('expectedGoalsAgainst', 0)
         ])
     
-    # 5. Uppdatera Google Sheet
-    sheet = client.open("FOTMOB data").worksheet("tabell")
-    sheet.clear()
-    sheet.update(range_name='A1', values=rows)
-    print("Tabellen har uppdaterats korrekt med målstatistik!")
+    sheet_table = client.open("FOTMOB data").worksheet("tabell")
+    sheet_table.clear()
+    sheet_table.update(range_name='A1', values=rows_table)
+    
+    # 3. Hämta och uppdatera matcher
+    url_matches = "https://www.fotmob.com/api/data/leagues?id=67&type=matches&ccode3=SWE"
+    response_matches = requests.get(url_matches, headers=headers)
+    data_matches = response_matches.json()
+    
+    matches = data_matches.get('matches', {}).get('allMatches', [])
+    
+    rows_matches = [["Datum/Tid", "Omgång", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]]
+    
+    for m in matches:
+        status = m.get('status', {})
+        home = m.get('home', {})
+        away = m.get('away', {})
+        
+        rows_matches.append([
+            status.get('utcTime', ''),
+            m.get('round', ''),
+            home.get('name', ''),
+            away.get('name', ''),
+            home.get('score', 0) if home.get('score') is not None else 0,
+            away.get('score', 0) if away.get('score') is not None else 0
+        ])
+    
+    sheet_matches = client.open("FOTMOB data").worksheet("Matcher")
+    sheet_matches.clear()
+    sheet_matches.update(range_name='A1', values=rows_matches)
+    
+    print("Både 'tabell' och 'Matcher' har uppdaterats!")
 
 if __name__ == "__main__":
     main()

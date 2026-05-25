@@ -23,7 +23,8 @@ def main():
     data_table = response_table.json()
     
     table_data = data_table[0]['data']['table']['all']
-    rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng", "xG", "xGA"]]
+    # xG och xGA borttagna från rubrikerna
+    rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
     
     for team in table_data:
         goals_str = team.get('scoresStr', '0-0')
@@ -41,9 +42,7 @@ def main():
             gjorda,
             inslappta,
             team.get('goalConDiff', 0),
-            team.get('pts', 0),
-            team.get('expectedGoals', 0),
-            team.get('expectedGoalsAgainst', 0)
+            team.get('pts', 0)
         ])
     
     spreadsheet = client.open("FOTMOB data")
@@ -73,12 +72,12 @@ def main():
             away.get('score', 0) if away.get('score') is not None else 0
         ])
     
-    # Uppdatera fliken 'matcher' (notera litet 'm')
+    # Uppdatera fliken 'matcher'
     sheet_matches = spreadsheet.worksheet("matcher")
     sheet_matches.clear()
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Både 'tabell' och 'matcher' har uppdaterats!")
+    print("Både 'tabell' och 'matcher' har uppdaterats (utan xG-data)!")
 
 if __name__ == "__main__":
     main()

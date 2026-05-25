@@ -15,12 +15,11 @@ def main():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
-    # 2. Hämta data från Fotmob med korrekta headers
-    # Vi använder en URL som är mer standardiserad för deras interna API-anrop
-    url = "https://www.fotmob.com/api/leagues?id=67"
+    # 2. Hämta data från Fotmob med den nya URL:en
+    url = "https://www.fotmob.com/api/data/leagues?id=67&ccode3=SWE"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Referer': 'https://www.fotmob.com/leagues/67/overview/allsvenskan',
+        'Referer': 'https://www.fotmob.com/',
         'Accept': 'application/json',
     }
     
@@ -28,16 +27,19 @@ def main():
     
     if response.status_code != 200:
         print(f"Fel: Kunde inte hämta data (Status {response.status_code})")
+        print(f"Svar: {response.text}")
         return
     
     data = response.json()
     
     # 3. Extrahera tabell-data
-    # Vi behöver verifiera strukturen
+    # Vi skriver ut datan så vi kan se strukturen om det fortfarande strular
     try:
+        # Om strukturen ändrats kan vi behöva justera denna path
         table_data = data['table'][0]['data']['table']['all']
-    except (KeyError, IndexError) as e:
-        print(f"Kunde inte hitta tabell i svaret. Fel: {e}")
+    except Exception as e:
+        print(f"Kunde inte hitta tabell-strukturen. Data-nycklar: {list(data.keys())}")
+        print(f"Felmeddelande: {e}")
         return
     
     # 4. Förbered rader

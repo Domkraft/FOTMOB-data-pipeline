@@ -54,13 +54,15 @@ def main():
     sheet_table.clear()
     sheet_table.update(range_name='A1', values=rows_table)
     
-    # 3. Hämta och uppdatera matcher
-    url_matches = "https://www.fotmob.com/api/data/leagues?id=67&type=matches&ccode3=SWE"
+    # 3. Hämta och uppdatera matcher med ny endpoint
+    # Vi testar att hämta direkt från 'matches' i huvud-API:et som brukar innehålla allt
+    url_matches = "https://www.fotmob.com/api/leagues?id=67"
     response_matches = requests.get(url_matches, headers=headers)
     data_matches = response_matches.json()
     
+    # Navigera till rätt plats för matcherna i den nya strukturen
     matches = data_matches.get('matches', {}).get('allMatches', [])
-    print(f"DEBUG: Antal matcher funna: {len(matches)}")
+    print(f"DEBUG: Antal matcher funna (ny endpoint): {len(matches)}")
     
     rows_matches = [["Datum/Tid", "Omgång", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]]
     

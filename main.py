@@ -43,22 +43,19 @@ def main():
     spreadsheet.worksheet("tabell").clear()
     spreadsheet.worksheet("tabell").update(range_name='A1', values=rows_table)
     
-    # 3. Uppdatera matcher från CSV (med uppdelat datum)
+    # 3. Uppdatera matcher från CSV
     url_csv = "https://www.football-data.co.uk/new/SWE.csv"
     response_csv = requests.get(url_csv)
     df = pd.read_csv(StringIO(response_csv.text))
     
-    # Konvertera datumsträng till datetime-objekt
-    # Antar att formatet i CSV är DD/MM/YY eller liknande
+    # Konvertera datum
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
-    
-    # Skapa de två nya kolumnerna
     df['År'] = df['Date'].dt.year
     df['Datum'] = df['Date'].dt.strftime('%m-%d')
     
-    # Välj kolumner i önskad ordning
-    df_clean = df[['År', 'Datum', 'Round', 'Home', 'Away', 'HG', 'AG']].copy()
-    df_clean.columns = ["År", "Datum", "Omgång", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]
+    # Använd exakta namn från bilden
+    df_clean = df[['År', 'Datum', 'Home', 'Away', 'HG', 'AG']].copy()
+    df_clean.columns = ["År", "Datum", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]
     
     # Skriv till arket
     rows_matches = [df_clean.columns.tolist()] + df_clean.values.tolist()
@@ -67,7 +64,7 @@ def main():
     sheet_matches.clear()
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Tabell och matcher (med uppdelat datum) har uppdaterats!")
+    print("Tabell och matcher har uppdaterats korrekt!")
 
 if __name__ == "__main__":
     main()

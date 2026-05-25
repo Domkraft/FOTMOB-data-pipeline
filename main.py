@@ -16,11 +16,10 @@ def main():
     client = gspread.authorize(creds)
     
     spreadsheet = client.open("FOTMOB data")
-    
-    # 2. Hämta och uppdatera tabellen (med PPM-kolumn)
-    url_table = "https://www.fotmob.com/api/data/tltable?leagueId=67"
     headers = {'User-Agent': 'Mozilla/5.0'}
     
+    # 2. Hämta och uppdatera tabellen
+    url_table = "https://www.fotmob.com/api/data/tltable?leagueId=67"
     response_table = requests.get(url_table, headers=headers)
     data_table = response_table.json()
     
@@ -35,7 +34,6 @@ def main():
         
         played = team.get('played', 0)
         pts = team.get('pts', 0)
-        # Beräkna PPM
         ppm = round(pts / played, 2) if played > 0 else 0
         
         rows_table.append([
@@ -62,6 +60,8 @@ def main():
     data_matches = response_matches.json()
     
     matches = data_matches.get('matches', {}).get('allMatches', [])
+    print(f"DEBUG: Antal matcher funna: {len(matches)}")
+    
     rows_matches = [["Datum/Tid", "Omgång", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]]
     
     for m in matches:
@@ -82,7 +82,7 @@ def main():
     sheet_matches.clear()
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Både 'tabell' (med PPM) och 'matcher' har uppdaterats!")
+    print("Både 'tabell' och 'matcher' har uppdaterats!")
 
 if __name__ == "__main__":
     main()

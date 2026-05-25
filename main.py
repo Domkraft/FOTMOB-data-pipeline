@@ -29,24 +29,26 @@ def main():
     # 3. Extrahera tabell-data
     table_data = data['table'][0]['data']['table']['all']
     
-    # DEBUG: Denna rad skriver ut vad som finns i datan så vi kan se rätt nycklar
-    print(f"DEBUG: Data för första laget: {table_data[0]}")
-    
     # 4. Förbered rader
     rows = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
     
     for team in table_data:
-        # Här testar vi de vanligaste varianterna på nyckelnamn
+        # Splitta '24-10' till [24, 10]
+        goals_str = team.get('scoresStr', '0-0')
+        goals_list = goals_str.split('-')
+        gjorda = goals_list[0] if len(goals_list) > 0 else 0
+        inslappta = goals_list[1] if len(goals_list) > 1 else 0
+        
         rows.append([
             team.get('idx', ''),
             team.get('name', ''),
             team.get('played', 0),
-            team.get('wins', team.get('won', 0)),           # Testar 'wins' eller 'won'
-            team.get('draws', team.get('drawn', 0)),        # Testar 'draws' eller 'drawn'
-            team.get('losses', team.get('lost', 0)),        # Testar 'losses' eller 'lost'
-            team.get('goalsFor', team.get('goalScored', 0)),# Testar 'goalsFor' eller 'goalScored'
-            team.get('goalsAgainst', team.get('goalConceded', 0)), # Testar 'goalsAgainst' eller 'goalConceded'
-            team.get('goalDifference', 0),
+            team.get('wins', 0),
+            team.get('draws', 0),
+            team.get('losses', 0),
+            gjorda,
+            inslappta,
+            team.get('goalConDiff', 0), # Nyckeln för målskillnad i loggen
             team.get('pts', 0)
         ])
     
@@ -54,7 +56,7 @@ def main():
     sheet = client.open("FOTMOB data").worksheet("tabell")
     sheet.clear()
     sheet.update(range_name='A1', values=rows)
-    print("Tabellen har uppdaterats!")
+    print("Tabellen har uppdaterats korrekt med målstatistik!")
 
 if __name__ == "__main__":
     main()

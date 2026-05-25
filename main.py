@@ -15,7 +15,7 @@ def main():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
-    # 2. Hämta data från Fotmob med den nya URL:en
+    # 2. Hämta data
     url = "https://www.fotmob.com/api/data/leagues?id=67&ccode3=SWE"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -24,36 +24,28 @@ def main():
     }
     
     response = requests.get(url, headers=headers)
-    
-    if response.status_code != 200:
-        print(f"Fel: Kunde inte hämta data (Status {response.status_code})")
-        print(f"Svar: {response.text}")
-        return
-    
     data = response.json()
     
     # 3. Extrahera tabell-data
-    # Vi skriver ut datan så vi kan se strukturen om det fortfarande strular
-    try:
-        # Om strukturen ändrats kan vi behöva justera denna path
-        table_data = data['table'][0]['data']['table']['all']
-    except Exception as e:
-        print(f"Kunde inte hitta tabell-strukturen. Data-nycklar: {list(data.keys())}")
-        print(f"Felmeddelande: {e}")
-        return
+    table_data = data['table'][0]['data']['table']['all']
+    
+    # DEBUG: Denna rad skriver ut vad som finns i datan så vi kan se rätt nycklar
+    print(f"DEBUG: Data för första laget: {table_data[0]}")
     
     # 4. Förbered rader
     rows = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng"]]
+    
     for team in table_data:
+        # Här testar vi de vanligaste varianterna på nyckelnamn
         rows.append([
             team.get('idx', ''),
             team.get('name', ''),
             team.get('played', 0),
-            team.get('won', 0),
-            team.get('drawn', 0),
-            team.get('lost', 0),
-            team.get('goalScored', 0),
-            team.get('goalConceded', 0),
+            team.get('wins', team.get('won', 0)),           # Testar 'wins' eller 'won'
+            team.get('draws', team.get('drawn', 0)),        # Testar 'draws' eller 'drawn'
+            team.get('losses', team.get('lost', 0)),        # Testar 'losses' eller 'lost'
+            team.get('goalsFor', team.get('goalScored', 0)),# Testar 'goalsFor' eller 'goalScored'
+            team.get('goalsAgainst', team.get('goalConceded', 0)), # Testar 'goalsAgainst' eller 'goalConceded'
             team.get('goalDifference', 0),
             team.get('pts', 0)
         ])

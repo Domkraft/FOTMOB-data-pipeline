@@ -1,3 +1,3 @@
 gspread
-requests
 google-auth
+fotmob-api

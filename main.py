@@ -43,7 +43,7 @@ def main():
     
     # 4. Uppdatera Google Sheet
     # OBS: Ersätt "Ditt_Google_Sheet_Namn" med namnet på din fil
-    sheet = client.open("Ditt_Google_Sheet_Namn").worksheet("tabell")
+    sheet = client.open("FOTMOB data").worksheet("tabell")
     sheet.clear()
     sheet.update(range_name='A1', values=rows)
 

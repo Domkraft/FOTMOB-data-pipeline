@@ -19,7 +19,7 @@ def main():
     spreadsheet = client.open("FOTMOB data")
     headers = {'User-Agent': 'Mozilla/5.0'}
     
-    # 2. Uppdatera tabell (FotMob-endpoint)
+    # 2. Uppdatera tabell (FotMob)
     url_table = "https://www.fotmob.com/api/data/tltable?leagueId=67"
     response_table = requests.get(url_table, headers=headers)
     data_table = response_table.json()
@@ -28,33 +28,37 @@ def main():
     rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng", "PPM"]]
     
     for team in table_data:
-        goals_str = team.get('scoresStr', '0-0')
-        goals_list = goals_str.split('-')
-        gjorda = goals_list[0] if len(goals_list) > 0 else 0
-        inslappta = goals_list[1] if len(goals_list) > 1 else 0
         played = team.get('played', 0)
         pts = team.get('pts', 0)
-        ppm = round(pts / played, 2) if played > 0 else 0
+        ppm = round(float(pts) / float(played), 2) if played > 0 else 0.0
         
         rows_table.append([
             team.get('idx', ''), team.get('name', ''), played, team.get('wins', 0),
-            team.get('draws', 0), team.get('losses', 0), gjorda, inslappta,
+            team.get('draws', 0), team.get('losses', 0), 
+            team.get('scoresStr', '0-0').split('-')[0], 
+            team.get('scoresStr', '0-0').split('-')[1],
             team.get('goalConDiff', 0), pts, ppm
         ])
     
     spreadsheet.worksheet("tabell").clear()
     spreadsheet.worksheet("tabell").update(range_name='A1', values=rows_table)
     
-    # 3. Uppdatera matcher från CSV-länken
+    # 3. Uppdatera matcher från CSV (med uppdelat datum)
     url_csv = "https://www.football-data.co.uk/new/SWE.csv"
     response_csv = requests.get(url_csv)
     df = pd.read_csv(StringIO(response_csv.text))
     
-    # Filtrera för Allsvenskan om filen innehåller flera ligor (t.ex. 'Division 1')
-    # Här väljer vi de relevanta kolumnerna
-    # Notera: Kontrollera exakta kolumnnamn i CSV-filen (Datum, Hemmalag, Bortalag, HemmaMål, BortaMål)
-    df_clean = df[['Date', 'Home', 'Away', 'HG', 'AG']].copy()
-    df_clean.columns = ["Datum", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]
+    # Konvertera datumsträng till datetime-objekt
+    # Antar att formatet i CSV är DD/MM/YY eller liknande
+    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+    
+    # Skapa de två nya kolumnerna
+    df['År'] = df['Date'].dt.year
+    df['Datum'] = df['Date'].dt.strftime('%m-%d')
+    
+    # Välj kolumner i önskad ordning
+    df_clean = df[['År', 'Datum', 'Round', 'Home', 'Away', 'HG', 'AG']].copy()
+    df_clean.columns = ["År", "Datum", "Omgång", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]
     
     # Skriv till arket
     rows_matches = [df_clean.columns.tolist()] + df_clean.values.tolist()
@@ -63,7 +67,7 @@ def main():
     sheet_matches.clear()
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Tabell och matcher (via CSV) har uppdaterats!")
+    print("Tabell och matcher (med uppdelat datum) har uppdaterats!")
 
 if __name__ == "__main__":
     main()

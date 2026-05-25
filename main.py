@@ -73,15 +73,12 @@ def main():
             away.get('score', 0) if away.get('score') is not None else 0
         ])
     
-    # Felsökning för fliknamn
-    all_worksheets = [ws.title for ws in spreadsheet.worksheets()]
-    print(f"DEBUG: Hittade flikar i arket: {all_worksheets}")
-    
-    sheet_matches = spreadsheet.worksheet("Matcher")
+    # Uppdatera fliken 'matcher' (notera litet 'm')
+    sheet_matches = spreadsheet.worksheet("matcher")
     sheet_matches.clear()
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Både 'tabell' och 'Matcher' har uppdaterats!")
+    print("Både 'tabell' och 'matcher' har uppdaterats!")
 
 if __name__ == "__main__":
     main()

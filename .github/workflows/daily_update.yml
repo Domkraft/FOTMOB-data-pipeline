@@ -21,4 +21,6 @@ jobs:
       - name: Run script
         env:
           GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          - name: List installed packages
+        run: pip list
         run: python main.py

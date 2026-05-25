@@ -6,20 +6,36 @@ from google.oauth2.service_account import Credentials
 
 def main():
     # 1. Autentisering
-    creds_dict = json.loads(os.environ['GCP_CREDENTIALS'])
+    # Vi hämtar credentials från GitHub Secrets
+    creds_raw = os.environ.get('GCP_CREDENTIALS')
+    if not creds_raw:
+        raise ValueError("GCP_CREDENTIALS secret not found in environment!")
+        
+    creds_dict = json.loads(creds_raw)
     scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
     # 2. Hämta data från Fotmob (Allsvenskan ID 67)
     url = "https://www.fotmob.com/api/leagues?id=67"
-    response = requests.get(url)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    
+    response = requests.get(url, headers=headers)
+    
+    # Felsökning om anropet misslyckas
+    if response.status_code != 200:
+        print(f"Fel vid anrop! Statuskod: {response.status_code}")
+        print(f"Svar: {response.text}")
+        return
+    
     data = response.json()
     
     # Extrahera tabell-data
     table_data = data['table'][0]['data']['table']['all']
     
-    # --- DIAGNOS: Printa nycklar för att se vad mer som finns ---
+    # DIAGNOS: Printa nycklar för att se vad mer som finns
     print("--- DIAGNOS: Tillgängliga nycklar i tabell-objektet ---")
     print(table_data[0].keys())
     print("-------------------------------------------------------")
@@ -42,10 +58,10 @@ def main():
         ])
     
     # 4. Uppdatera Google Sheet
-    # OBS: Ersätt "Ditt_Google_Sheet_Namn" med namnet på din fil
     sheet = client.open("FOTMOB data").worksheet("tabell")
     sheet.clear()
     sheet.update(range_name='A1', values=rows)
+    print("Tabellen har uppdaterats framgångsrikt!")
 
 if __name__ == "__main__":
     main()

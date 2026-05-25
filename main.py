@@ -23,7 +23,6 @@ def main():
     data_table = response_table.json()
     
     table_data = data_table[0]['data']['table']['all']
-    # PPM tillagt som kolumn
     rows_table = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng", "PPM"]]
     
     for team in table_data:
@@ -56,34 +55,7 @@ def main():
     sheet_table.clear()
     sheet_table.update(range_name='A1', values=rows_table)
     
-    # 3. Hämta och uppdatera matcher
-    url_matches = "https://www.fotmob.com/api/data/leagues?id=67&type=matches&ccode3=SWE"
-    response_matches = requests.get(url_matches, headers=headers)
-    data_matches = response_matches.json()
-    
-    matches = data_matches.get('matches', {}).get('allMatches', [])
-    rows_matches = [["Datum/Tid", "Omgång", "Hemmalag", "Bortalag", "Hemmalagsmål", "Bortalagsmål"]]
-    
-    for m in matches:
-        status = m.get('status', {})
-        home = m.get('home', {})
-        away = m.get('away', {})
-        
-        rows_matches.append([
-            status.get('utcTime', ''),
-            m.get('round', ''),
-            home.get('name', ''),
-            away.get('name', ''),
-            home.get('score', 0) if home.get('score') is not None else 0,
-            away.get('score', 0) if away.get('score') is not None else 0
-        ])
-    
-    # Uppdatera fliken 'matcher'
-    sheet_matches = spreadsheet.worksheet("matcher")
-    sheet_matches.clear()
-    sheet_matches.update(range_name='A1', values=rows_matches)
-    
-    print("Både 'tabell' och 'matcher' har uppdaterats med PPM!")
+    print("Fliken 'tabell' har uppdaterats med PPM!")
 
 if __name__ == "__main__":
     main()

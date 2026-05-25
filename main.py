@@ -17,17 +17,44 @@ def main():
     url = "https://www.fotmob.com/api/data/tltable?leagueId=67"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Referer': 'https://www.fotmob.com/',
     }
     
     response = requests.get(url, headers=headers)
     data = response.json()
     
-    # DEBUG: Eftersom data är en lista, skriv ut vad det första elementet är
-    if isinstance(data, list) and len(data) > 0:
-        print(f"DEBUG: Första elementet i listan: {json.dumps(data[0], indent=2)[:1000]}")
-    else:
-        print(f"DEBUG: Data är inte en lista eller är tom: {type(data)}")
+    # Navigera rätt: Lista -> Första objektet -> 'data' -> 'table' -> 'all'
+    table_data = data[0]['data']['table']['all']
+    
+    # DEBUG: Skriver ut första laget så vi kan bekräfta xG-nycklar
+    print(f"DEBUG: Lagobjekt för xG-check: {table_data[0]}")
+    
+    rows = [["Position", "Lag", "Spelade", "Vinster", "Oavgjorda", "Förluster", "Gjorda mål", "Insläppta mål", "Målskillnad", "Poäng", "xG", "xGA"]]
+    
+    for team in table_data:
+        goals_str = team.get('scoresStr', '0-0')
+        goals_list = goals_str.split('-')
+        gjorda = goals_list[0] if len(goals_list) > 0 else 0
+        inslappta = goals_list[1] if len(goals_list) > 1 else 0
+        
+        rows.append([
+            team.get('idx', ''),
+            team.get('name', ''),
+            team.get('played', 0),
+            team.get('wins', 0),
+            team.get('draws', 0),
+            team.get('losses', 0),
+            gjorda,
+            inslappta,
+            team.get('goalConDiff', 0),
+            team.get('pts', 0),
+            team.get('expectedGoals', 0), # Dessa kan behöva justeras om loggen visar annat
+            team.get('expectedGoalsAgainst', 0)
+        ])
+    
+    sheet = client.open("FOTMOB data").worksheet("tabell")
+    sheet.clear()
+    sheet.update(range_name='A1', values=rows)
+    print("Tabellen har uppdaterats med xG-försök!")
 
 if __name__ == "__main__":
     main()

@@ -40,8 +40,10 @@ def main():
             team.get('goalConDiff', 0), pts, ppm
         ])
     
-    spreadsheet.worksheet("tabell").clear()
-    spreadsheet.worksheet("tabell").update(range_name='A1', values=rows_table)
+    # Uppdatera tabellfliken utan att rensa hela arket
+    sheet_table = spreadsheet.worksheet("tabell")
+    sheet_table.batch_clear(['A1:K50']) 
+    sheet_table.update(range_name='A1', values=rows_table)
     
     # 3. Uppdatera matcher från CSV
     url_csv = "https://www.football-data.co.uk/new/SWE.csv"
@@ -60,11 +62,12 @@ def main():
     # Skriv till arket
     rows_matches = [df_clean.columns.tolist()] + df_clean.values.tolist()
     
+    # Uppdatera matcherfliken utan att rensa hela arket
     sheet_matches = spreadsheet.worksheet("matcher")
-    sheet_matches.clear()
+    sheet_matches.batch_clear(['A1:G1000'])
     sheet_matches.update(range_name='A1', values=rows_matches)
     
-    print("Tabell och matcher har uppdaterats korrekt!")
+    print("Tabell och matcher har uppdaterats, övrig data i arket bevarad!")
 
 if __name__ == "__main__":
     main()
